@@ -93,10 +93,8 @@ fill-chests: true
 
 # Chest coordinates. Each location should be an array containing the x, y, z coordinates for that location.
 chest-coords: [
-    [97.5, 4, 102.5],
-    [102.5, 4, 102.5],
-    [102.5, 4, 97.5],
-    [97.5, 4, 97.5]
+    [0, 0, 0],
+    [0, 0, 0]
 ]
 
 # Each item should be an array that contains the item id, and the maximum amount of this item that a chest can have.
@@ -106,6 +104,7 @@ chest-coords: [
 # Tip: You can add duplicate arrays with the same item id and amount to increase the chance of that item being selected, and therefore increase the rarity of other items.
 # Tip: Use ':' to separate item IDs from metadata, such as [1:1, 5]
 chest-contents: [
+# Example List
     [367, 7],
     [54, 1],
     [357, 1],
@@ -137,7 +136,7 @@ winning-message: "§a{winner} has won the game!§r"
 # TP players to deathmatch after a certain time playing
 deathmatch: true
 
-# The time at which players are teleported to the deathmatch (in seconds)
+# The number (in seconds) after the game start at which players will be teleported to the deathmatch
 deathmatch-countdown: 120
 
 # Message sent to players on TP to deathmatch. Set "" for no deathmatch message
@@ -146,7 +145,7 @@ deathmatch-message: "§eWelcome to the Deathmatch! Good luck!§r"
 # Deathmatch coordinates
 deathmatch-coords: [0, 0, 0]
 
-# Force-end game after time (in seconds). Set -1 to allow game to run indefinitely.
+# Force-end game after this number (in seconds). Set -1 to allow game to run indefinitely.
 force-end: 180
 
 # Force-end message. Set "" for no force-end message
