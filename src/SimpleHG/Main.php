@@ -38,6 +38,10 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 
 use pocketmine\item\Item;
 
+use pocketmine\entity\Item as ItemEntity;
+
+use pocketmine\tile\Chest;
+
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 
@@ -129,6 +133,25 @@ class Main extends PluginBase implements Listener{
         $h = $this->getServer()->getScheduler()->scheduleRepeatingTask($this->gameTask, 20);
         $this->gameTask->setHandler($h);
         $this->gameRunning = true;
+        
+        $entityList = $this->getServer()->getLevelByName($this->cfg->get("world"));
+        foreach($entityList as $ent){
+            if($ent instanceof ItemEntity){
+                $ent->close();
+            }
+        }
+        
+        $chestCoordList = $this->cfg->get("chest-coords");
+        foreach($chestCoordList as $coords){
+            $block = ($this->getServer()->getLevelByName($this->cfg->get("world")))->getTile(new Vector3($coords[0], $coords[1], $coords[2]));
+            if($block instanceof Chest){
+                $block->getInventory()->clearAll();
+            }else{
+                $this->getServer()->getLogger()->warning("§cSimpleHG detected an incorrect game chest location.§r");
+                $this->setEnabled(false);
+                return;
+            }
+        }
             
         $signBlockList = [];
         foreach($this->signs as $s){
@@ -379,32 +402,39 @@ class Main extends PluginBase implements Listener{
             $alreadyUsedItemIDs = [];
             
             foreach($chestCoords as $chestLocation){
-                $chestInv = $this->getServer()->getLevelByName("{$this->cfg->get("world")}")->getTile(new Vector3($chestLocation[0], $chestLocation[1], $chestLocation[2]))->getInventory();
-                $chestInv->clearAll();
-                $chestTimesItemAdded = 0;
-                
-                $chestSize = $chestInv->getSize();
-                $timesToAddItems = rand($minChestNum, $maxChestNum);
-                $chestAddedTimes = 0;
-                while($chestAddedTimes !== $timesToAddItems){
-                    $randomIndex = rand(0, $chestSize - 1);
-                    if($chestInv->getItem($randomIndex)->getName() === "Air" && $chestInv->getItem($randomIndex)->getId() === 0){
-                        $randomChestContent = $chestItems[(rand(0, count($chestItems) - 1))];
-                        $randomItemID = $randomChestContent[0];
-                        $maxNumOfItem = $randomChestContent[1];
-                        $numOfItem = rand(1, $maxNumOfItem);
-                        
-                        $stringArray = explode(':', $randomItemID);
-                        $randomItemID = $stringArray[0];
-                        $meta = 0;
-                        if(isset($stringArray[1])){
-                            $meta = $stringArray[1];
+                $block = $this->getServer()->getLevelByName("{$this->cfg->get("world")}")->getTile(new Vector3($chestLocation[0], $chestLocation[1], $chestLocation[2]));
+                if($block instanceof Chest){
+                    $chestInv = $this->getServer()->getLevelByName("{$this->cfg->get("world")}")->getTile(new Vector3($chestLocation[0], $chestLocation[1], $chestLocation[2]))->getInventory();
+                    $chestInv->clearAll();
+                    $chestTimesItemAdded = 0;
+                    
+                    $chestSize = $chestInv->getSize();
+                    $timesToAddItems = rand($minChestNum, $maxChestNum);
+                    $chestAddedTimes = 0;
+                    while($chestAddedTimes !== $timesToAddItems){
+                        $randomIndex = rand(0, $chestSize - 1);
+                        if($chestInv->getItem($randomIndex)->getName() === "Air" && $chestInv->getItem($randomIndex)->getId() === 0){
+                            $randomChestContent = $chestItems[(rand(0, count($chestItems) - 1))];
+                            $randomItemID = $randomChestContent[0];
+                            $maxNumOfItem = $randomChestContent[1];
+                            $numOfItem = rand(1, $maxNumOfItem);
+                            
+                            $stringArray = explode(':', $randomItemID);
+                            $randomItemID = $stringArray[0];
+                            $meta = 0;
+                            if(isset($stringArray[1])){
+                                $meta = $stringArray[1];
+                            }
+                            
+                            $chestInv->setItem($randomIndex, new Item($randomItemID, $meta, $numOfItem));
+                            
+                            $chestAddedTimes++;
                         }
-                        
-                        $chestInv->setItem($randomIndex, new Item($randomItemID, $meta, $numOfItem));
-                        
-                        $chestAddedTimes++;
                     }
+                }else{
+                    $this->getServer()->getLogger()->warning("§cSimpleHG detected an incorrect game chest location.§r");
+                    $this->setEnabled(false);
+                    return;
                 }
             }
         }
@@ -498,7 +528,7 @@ class Main extends PluginBase implements Listener{
             $attacker = $event->getDamager();
             if($target instanceof Player && $attacker instanceof Player){
                 if($target->isPlayingSimpleHG && $attacker->isPlayingSimpleHG){
-                    if($this->gameTask->playersInvincible){
+                    if($this->gameTask->playersInvincible && $this->gameTask->hasStarted){
                         $event->setCancelled();
                         $t = $this->cfg->get("invincibility") + $this->gameTask->countdownLength;
                         $tr = $t - $this->gameTask->seconds;
